@@ -3,6 +3,7 @@ import scipy as sp
 import matplotlib.pyplot as plt
 import scipy.sparse as spp
 import scipy.sparse.linalg as sppla
+from meshing import *
 
 
 # ### SG setup
@@ -34,59 +35,108 @@ import scipy.linalg as sl
 import time
 from mpl_toolkits.mplot3d import axes3d
 
-def uinit(x,y):
-    cx = np.multiply(np.cos(np.pi*x),np.cos(np.pi*y)) + 0.5
-    cy = np.multiply(np.sin(np.pi*x),np.sin(np.pi*y))
-    u = np.exp(-(x+y)**2.)  # u0
+def uinit(x,y,x1,x2,y1,y2):
+    Lx = 2
+    y_comp1 = 2/3*np.pi*y1*y1+1/2*np.pi
+    y_comp2 = 2/3*np.pi*y2*y2+1/2*np.pi
+    y_comp = 2/3*np.pi*y*y+1/2*np.pi
+    cx1 = np.multiply(np.cos(np.pi*x1/Lx),np.cos(np.pi*y1)) # Better choice of C
+    cx2 = np.multiply(np.cos(np.pi*x2/Lx),np.cos(np.pi*y2)) # Better choice of C
+    cy1 = np.multiply(np.sin(np.pi*x1/Lx),np.sin(y_comp1))
+    cy2 = np.multiply(np.sin(np.pi*x2/Lx),np.sin(y_comp2))
+    cx = np.multiply(np.cos(np.pi*x/Lx),np.cos(np.pi*y)) # Better choice of C
+    cy = np.multiply(np.sin(np.pi*x/Lx),np.sin(y_comp))
+    u = np.exp(-(x**2.+y**2.))  # u0
     ud = 0.0  # u = ud on Dirichlet
     bctyp = 3 # DDDD
     src = 0.  # Source term
-    return cx, cy, u, ud, bctyp, src
+    return cx, cy, cx1,cx2, cy1,cy2, u, ud, bctyp, src
 
 def advdif(p,nu,T,nt,nplt):
+    """
+    Problem simulates advection/diffusion equation in a two dimensional rectangular domain,
+    where the x dimension goes in -2 to 2
+    and the y dimension goes in -1 to 1
+    """
     ah,bh,ch,dh,z,w = semhat(p)
-    n1 = p + 1
-    x = z
-    [X,Y] = np.meshgrid(x,x)
+    nx = 2*(p+1)-1
+    ny = p+1
+    npt_elem = p+1
+    Q = make_scatter(p) # scatter operator, used for assembly
+    x = np.hstack((z-1,z[1:]+1))
+    x1 = z-1 # x points associated with lhs element
+    x2 = z+1 # x points associated with rhs element
+    y = z
+    [X,Y] = np.meshgrid(x,y)
+    [X1,Y1] = np.meshgrid(x1,y)
+    [X2,Y2] = np.meshgrid(x2,y)
+    #uncomment to check the grid of points
+    #plt.scatter(X,Y, marker=".")
+    #plt.scatter(X1,Y1, marker=".")
+    #plt.scatter(X2,Y2, marker=".")
+    #plt.show()
+    #exit()
     X = X.T
     Y = Y.T
-    cx, cy, u0, ud, bctyp, src = uinit(X,Y)
+    X1 = X1.T
+    Y1 = Y1.T
+    X2 = X2.T
+    Y2 = Y2.T
+    cx, cy, cx1, cy1, cx2,cy2, u0, ud, bctyp, src = uinit(X,Y,X1,X2,Y1,Y2)
     # BC
-    I1 = sp.sparse.eye(n1).tocsr()
+    Ix = sp.sparse.eye(nx).tocsr()
+    Iy = sp.sparse.eye(ny).tocsr()
+    Ie = sp.sparse.eye(npt_elem).tocsr()
     if(bctyp==1): # DDNN
-        Rx = I1[1:-1,:].toarray() # Dirichlet left and right, Neumann top/bottom
-        Ry = I1.toarray()
+        Rx = Ix[1:-1,:].toarray() # Dirichlet left and right, Neumann top/bottom
+        Ry = Iy.toarray()
     elif(bctyp==2): # DNNN
-        Rx = I1[1:,:].toarray() # Dirichlet left, Neumann everywhere
-        Ry = I1.toarray()
+        Rx = Ix[1:,:].toarray() # Dirichlet left, Neumann everywhere
+        Ry = Iy.toarray()
     elif(bctyp==3): # DDDD
-        Rx = I1[1:-1,:].toarray()
-        Ry = I1[1:-1,:].toarray()
+        Rx = Ix[1:-1,:].toarray()
+        Ry = Iy[1:-1,:].toarray()
     elif(bctyp==4): # DNDN
-        Rx = I1[1:,:].toarray()
-        Ry = I1[1:,:].toarray()
+        Rx = Ix[1:,:].toarray()
+        Ry = Iy[1:,:].toarray()
     Ryt = Ry.T
 
     R = spp.kron(Ry,Rx)
 
     # FastDiagM setup
-    Ax = Rx.dot(ah).dot(Rx.T)
-    Bx = Rx.dot(bh).dot(Rx.T)
-    Ay = Ry.dot(ah).dot(Ry.T)
-    By = Ry.dot(bh).dot(Ry.T)
-    Abar = spp.kron(ah,bh) + spp.kron(bh,ah)
+    Lx = 2
+    Ly = 2 # all elements are merely the reference element
+    Abar = Lx/Ly*spp.kron(ah,bh) + Ly/Lx*spp.kron(bh,ah)
     Bbar = spp.kron(bh,bh)
-    wy,vy = sl.eigh(Ay,By) # Equation in direction y
-    wx,vx = sl.eigh(Ax,Bx) # Equation in direction x
-    vyt = vy.T
-    vxt = vx.T
-    ry = wy.shape[0]
-    rx = wx.shape[0]
-    sy = np.ones(ry)
-    sx = np.ones(rx)
+    Bbar *= Lx*Ly*0.25
+
+    Dx = spp.kron(Ie, Lx/2*dh)
+    Dy = spp.kron(Ly/2*dh,Ie)
+
+    Dxc1 = np.zeros((npt_elem*npt_elem,npt_elem*npt_elem)) # based on an individual element
+    Dyc1 = np.zeros((npt_elem*npt_elem,npt_elem*npt_elem))
+    Dxc2 = np.zeros((npt_elem*npt_elem,npt_elem*npt_elem)) # based on an individual element
+    Dyc2 = np.zeros((npt_elem*npt_elem,npt_elem*npt_elem))
+
+    D_full = Dx.toarray()
+    Dy_full = Dy.toarray()
+
+    cx1 = cx1.reshape((npt_elem*npt_elem,))
+    cy1 = cy1.reshape((npt_elem*npt_elem,))
+    cx2 = cx2.reshape((npt_elem*npt_elem,))
+    cy2 = cy2.reshape((npt_elem*npt_elem,))
+
+    # Somehow this is the correct thing to do here...
+    for i in range(npt_elem*npt_elem):
+        Dxc1[i] = cy1[i]*Dy_full[i]
+        Dyc1[i] = cx1[i]*D_full[i]
+        Dxc2[i] = cy2[i]*Dy_full[i]
+        Dyc2[i] = cx2[i]*D_full[i]
     
-    Dh1 = wy + wx[:,np.newaxis]   # reshaped lambda x I + I x lambda
-    Dh2 = sy + 0.*sx[:,np.newaxis] # reshaped I x I
+    Cbar1 = Bbar@Dxc1+Bbar@Dyc1
+    Cbar1 = spp.csr_matrix(Cbar1)
+    Cbar2 = Bbar@Dxc2+Bbar@Dyc2
+    Cbar2 = spp.csr_matrix(Cbar2)
 
     dt = T/float(nt)
     dti = 1./dt
@@ -97,7 +147,8 @@ def advdif(p,nu,T,nt,nplt):
     ons = ud * np.ones(u0.shape)
     ub = ons - Rx.T.dot(Rx.dot(ons).dot(Ryt)).dot(Ry) # u=ud on D bndry
     u = Rx.T.dot(Rx.dot(u0).dot(Ry.T)).dot(Ry) + ub
-    f1 = np.zeros(Rx.dot(u0.reshape((n1,n1))).dot(Ryt).shape)
+    #f1 = np.zeros(Rx.dot(u0.reshape((n1,n1))).dot(Ryt).shape)
+    f1 = np.zeros((nx*ny,))
     f2 = f1.copy()
     f3 = f2.copy()
     fb1 = f1.copy()
@@ -118,24 +169,36 @@ def advdif(p,nu,T,nt,nplt):
     ax.set_ylabel('Y')
     ax.set_zlabel('u')
     plt.pause(0.5)
-    input("Press Enter to continue...")
+    u = u.reshape((nx*ny,))
+    ub = ub.reshape((nx*ny,))
+
+    # Form local DOF matrices
+    AL = spp.kron(spp.eye(2),Abar)
+    BL = spp.kron(spp.eye(2),Bbar)
+    CL = spp.kron(np.array([[1,0],[0,0]]), Cbar1)
+    CL += spp.kron(np.array([[0,0],[0,1]]), Cbar2)
+    #CL = spp.csr_matrix(CL)
 
     for i in range(nt): # nt
         if(i<=2):
             ali = al[i,:]
             bti = bt[i,:]
-
-        # Advection term, to be extrapolated
-        f1 = - Rx.dot(bh.dot(np.multiply(cx,dh.dot(u))\
-                + np.multiply(cy,u.dot(dh.T))).dot(bh)).dot(Ryt)
-        # Source term, to be extrapolated
-        f1 = f1 + Rx.dot(bh.dot(src+0.*u).dot(bh)).dot(Ryt)
-        # Mass matrix, backward diff
-        fb1 = Rx.dot(bh.dot(u).dot(bh.T)).dot(Ryt)
-        # RHS, Everything
+        ## Advection term, to be extrapolated
+        #f1 = -1.0*Cbar@u
+        f1 - -1.0*Q.T@CL@Q@u
+        ## Source term, to be extrapolated
+        #f1 += Bbar@(src+0.*u)
+        f1 += Q.T@BL@Q@(src+0.*u)
+        ## Mass matrix, backward diff
+        #fb1 = Bbar@u
+        fb1 = Q.T@BL@Q@u
+        ## RHS, Everything
+        #f = - (dti)*( bti[1]*fb1 + bti[2]*fb2 + bti[3]*fb3 )\
+        #        + ali[0]*f1 + ali[1]*f2 + ali[2]*f3\
+        #        - nu * Abar@ub
         f = - (dti)*( bti[1]*fb1 + bti[2]*fb2 + bti[3]*fb3 )\
                 + ali[0]*f1 + ali[1]*f2 + ali[2]*f3\
-                - nu * Rx.dot(ah.dot(ub).dot(bh)+bh.dot(ub).dot(ah.T)).dot(Ryt)
+                - nu * Q.T@AL@Q@ub
         # Save old states
         fb3 = fb2.copy()
         fb2 = fb1.copy()
@@ -144,16 +207,16 @@ def advdif(p,nu,T,nt,nplt):
         # Set up FDM solve
         h1 = nu
         h2 = bti[0] * dti
-        Dl = h1 * Dh1 + h2 * Dh2
-        Hbar = h2 * Bbar + nu*Abar
+        Hbar = Q.T@(h2 * BL+ nu*AL)@Q
         H = R@Hbar@R.T
-        f = f.reshape(H.shape[0],1)
-        ug = sppla.cg(H,f)[0]
-        u = R.T@ug
-        u = u.reshape(int(np.sqrt(u.shape[0])), int(np.sqrt(u.shape[0]))) + ub
+        RHS = R@f
+        ug = sppla.cg(H,RHS)[0]
+        u = R.T@ug+ub
+        #u = u.reshape(int(np.sqrt(u.shape[0])), int(np.sqrt(u.shape[0])))
         t  = float(i+1)*dt
         
         if((i+1)%ndt==0 or i==nt-1):
+            u = u.reshape((nx,ny))
             plt.clf()
             ax1 = fig.add_subplot(1,2,1)
             surf = ax1.contourf(X,Y,u)
@@ -162,18 +225,18 @@ def advdif(p,nu,T,nt,nplt):
             ax1.set_title('t=%f'%t)
             ax = fig.add_subplot(1,2,2,projection='3d')
             wframe = ax.plot_wireframe(X, Y, u)
+            u = u.reshape((nx*ny,))
             ax.set_xlabel('X')
             ax.set_ylabel('Y')
             ax.set_zlabel('u')
             plt.pause(0.5)
-            input("Press Enter to continue...")
             
             print('t=%f, umin=%g, umax=%g'%(t,np.amin(u),np.amax(u)))
 
     succ = 0
     return succ
 
-p    = 30
+p    = 10
 nu   = 1.e-2
 T    = 10.
 nt   = 2000

@@ -3,6 +3,7 @@ import scipy as sp
 import matplotlib.pyplot as plt
 import scipy.sparse as spp
 import scipy.sparse.linalg as sppla
+import os
 
 
 # ### SG setup
@@ -129,17 +130,20 @@ def advdif(p,nu,T,nt,nplt):
     # Plot initial field
     fig = plt.figure(figsize=(12,6))
     ax1 = fig.add_subplot(1,2,1)
-    surf = ax1.contourf(X,Y,u)
+    #surf = ax1.contourf(X,Y,u, levels=[0.1,0.25,0.5,1])
+    surf = ax1.contourf(X,Y,u, levels=np.linspace(0.0,1,9))
     fig.colorbar(surf)
     ax1.quiver(X,Y,cx,cy,scale=10,headwidth=5,headlength=10)
     ax1.set_title('t=%f'%t)
+    ax1.set_autoscale_on(False)
     ax = fig.add_subplot(1,2,2,projection='3d')
     wframe = ax.plot_wireframe(X, Y, u)
     ax.set_xlabel('X')
+    ax.set_zlim(0,1)
     ax.set_ylabel('Y')
     ax.set_zlabel('u')
-    plt.pause(0.5)
-    input("Press Enter to continue...")
+    plot_counter = 0
+    fig.savefig(f"tmp_plot_{str(plot_counter).zfill(5)}.png")
     u = u.reshape((n1*n1,))
     ub = ub.reshape((n1*n1,))
 
@@ -175,30 +179,35 @@ def advdif(p,nu,T,nt,nplt):
         
         if((i+1)%ndt==0 or i==nt-1):
             u = u.reshape((n1,n1))
+            plot_counter += 1
             plt.clf()
             ax1 = fig.add_subplot(1,2,1)
-            surf = ax1.contourf(X,Y,u)
+            surf = ax1.contourf(X,Y,u, levels=np.linspace(0.0,1,9))
+            #surf = ax1.contourf(X,Y,u)
             fig.colorbar(surf)
             ax1.quiver(X,Y,cx,cy,scale=10,headwidth=5,headlength=10)
             ax1.set_title('t=%f'%t)
             ax = fig.add_subplot(1,2,2,projection='3d')
             wframe = ax.plot_wireframe(X, Y, u)
-            u = u.reshape((n1*n1,))
+            ax.set_zlim(0,1)
             ax.set_xlabel('X')
             ax.set_ylabel('Y')
             ax.set_zlabel('u')
-            plt.pause(0.5)
-            input("Press Enter to continue...")
-            
+            #plt.pause(0.05)
+            fig.savefig(f"tmp_plot_{str(plot_counter).zfill(5)}.png")
             print('t=%f, umin=%g, umax=%g'%(t,np.amin(u),np.amax(u)))
+            u = u.reshape((n1*n1,))
 
     succ = 0
+    # image processing stuff
+    os.system("convert   -delay 10   -loop 0   tmp_plot_*.png   single_elem_conv_diff.gif")
+    os.system("rm tmp_plot_*.png")
     return succ
 
 p    = 30
 nu   = 1.e-2
 T    = 10.
 nt   = 2000
-nplt = 5
+nplt = 100
 succ = advdif(p,nu,T,nt,nplt)
 

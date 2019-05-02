@@ -1,10 +1,8 @@
 import numpy as np
-# Hard coded for E=2 case needed for the presentation
 def make_scatter(p):
     """
     Explicitly form the Q matrix for the scatter operation.
-    With this, Q.T forms a scatter opeartion, and
-    the FEM assembly is done simply as 
+    Gather is simply Q.T.
     """
     nglobal = 2*(p+1)**2 - (p+1)
     nlocal = 2*(p+1)**2
@@ -25,7 +23,6 @@ def make_scatter(p):
                 global_id_count += 1
             local_id_count += 1
     return Q
-# TODO, may want to verify p=3 case, too.
 if __name__ == "__main__":
     Q_gold = np.zeros((18,15))
     for i in range(9):
@@ -41,7 +38,7 @@ if __name__ == "__main__":
     Q_gold[17,14] = 1
     Q = make_scatter(2)
     import numpy.linalg as la
-    print(f"Error: {la.norm(Q_gold-Q)}")
+    assert np.allclose(Q_gold,Q)
     Q = make_scatter(1)
     Q_gold = np.zeros((8,6))
     for i in range(4):
@@ -50,5 +47,27 @@ if __name__ == "__main__":
     Q_gold[6,3] = 1
     Q_gold[5,4] = 1
     Q_gold[7,5] = 1
-    print(f"Error: {la.norm(Q_gold-Q)}")
+    assert np.allclose(Q_gold,Q)
 
+    # Now suppose we take two high order elements
+    p = 30
+    nglobal = 2*(p+1)**2-(p+1)
+    u = np.arange(0,nglobal) # real u
+    Q = make_scatter(p)
+    uL = Q@u # uL should have local degrees
+    nlocal = uL.shape[0]
+    nelem1 = (p+1)**2
+    local_id = 0
+    global_id = 0
+    for i in range(nelem1):
+        assert np.isclose(uL[i],i) # correct so far
+        local_id += 1
+        global_id += 1
+    for i in range(p+1):
+        for j in range(p+1):
+            if(j == 0):
+                assert np.isclose(uL[local_id],u[i*(p+1)+p])
+            else:
+                np.isclose(uL[local_id],u[global_id])
+                global_id += 1
+            local_id += 1
