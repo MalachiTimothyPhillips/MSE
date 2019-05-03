@@ -74,6 +74,7 @@ def advdif(p,nu,T,nt,nplt):
         Ry = I1[1:,:].toarray()
     Ryt = Ry.T
 
+    #R = spp.kron(Ry,Rx)
     R = spp.kron(Ry,Rx)
 
     # FastDiagM setup
@@ -198,7 +199,7 @@ def advdif(p,nu,T,nt,nplt):
 p    = 30
 nu   = 1.e-2
 T    = 10.
-nt   = 2000
-nplt = 100
+nt   = 1000
+nplt = 20
 succ = advdif(p,nu,T,nt,nplt)
 
