@@ -205,9 +205,9 @@ def advdif(p,nu,T,nt,nplt):
     return succ
 
 p    = 30
-nu   = 1.e-2
-T    = 10.
-nt   = 2000
-nplt = 100
+nu   = 1.e-1
+T    = 3
+nt   = 500
+nplt = 40
 succ = advdif(p,nu,T,nt,nplt)
 

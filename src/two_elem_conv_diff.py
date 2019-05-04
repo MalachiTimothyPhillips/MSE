@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import scipy.sparse as spp
 import scipy.sparse.linalg as sppla
 from meshing import *
-
+import os
 
 # ### SG setup
 
@@ -36,7 +36,7 @@ import time
 from mpl_toolkits.mplot3d import axes3d
 
 def uinit(x,y,x1,x2,y1,y2):
-    Lx = 2
+    Lx = 4
     y_comp1 = 2/3*np.pi*y1*y1+1/2*np.pi
     y_comp2 = 2/3*np.pi*y2*y2+1/2*np.pi
     y_comp = 2/3*np.pi*y*y+1/2*np.pi
@@ -46,6 +46,12 @@ def uinit(x,y,x1,x2,y1,y2):
     cy2 = np.multiply(np.sin(np.pi*x2/Lx),np.sin(y_comp2))
     cx = np.multiply(np.cos(np.pi*x/Lx),np.cos(np.pi*y)) # Better choice of C
     cy = np.multiply(np.sin(np.pi*x/Lx),np.sin(y_comp))
+    #cx1 = 0*x1
+    #cy1 = 0*y1
+    #cx2 = 0*x2
+    #cy2 = 0*y2
+    #cx = 0*x
+    #cy = 0*y
     u = np.exp(-(x**2.+y**2.))  # u0
     src = 0.  # Source term
     return cx, cy, cx1,cx2, cy1,cy2, u, src
@@ -112,16 +118,20 @@ def advdif(p,nu,T,nt,nplt):
     # Plot initial field
     fig = plt.figure(figsize=(12,6))
     ax1 = fig.add_subplot(1,2,1)
-    surf = ax1.contourf(X,Y,uplot)
+    #surf = ax1.contourf(X,Y,uplot)
+    surf = ax1.contourf(X,Y,uplot, levels=np.linspace(0.0,1,9))
     fig.colorbar(surf)
     ax1.quiver(X,Y,cx,cy,scale=10,headwidth=5,headlength=10)
     ax1.set_title('t=%f'%t)
     ax = fig.add_subplot(1,2,2,projection='3d')
     wframe = ax.plot_wireframe(X, Y, uplot)
     ax.set_xlabel('X')
+    ax.set_zlim(0,1)
     ax.set_ylabel('Y')
     ax.set_zlabel('u')
-    plt.pause(0.5)
+    #plt.pause(0.5)
+    plot_counter = 0
+    fig.savefig(f"tmp_plot_{str(plot_counter).zfill(5)}.png")
 
     # Form local DOF matrices
     AL = spp.kron(spp.eye(2),Abar)
@@ -166,28 +176,35 @@ def advdif(p,nu,T,nt,nplt):
         t  = float(i+1)*dt
         
         if((i+1)%ndt==0 or i==nt-1):
+            plot_counter += 1
             uplot = reorder_u_for_plot(u,p)
             plt.clf()
             ax1 = fig.add_subplot(1,2,1)
-            surf = ax1.contourf(X,Y,uplot)
+            #surf = ax1.contourf(X,Y,uplot)
+            surf = ax1.contourf(X,Y,uplot, levels=np.linspace(0.0,1,9))
             fig.colorbar(surf)
             ax1.quiver(X,Y,cx,cy,scale=10,headwidth=5,headlength=10)
             ax1.set_title('t=%f'%t)
             ax = fig.add_subplot(1,2,2,projection='3d')
             wframe = ax.plot_wireframe(X, Y, uplot)
             u = u.reshape((nx*ny,))
+            ax.set_zlim(0,1)
             ax.set_xlabel('X')
             ax.set_ylabel('Y')
             ax.set_zlabel('u')
-            plt.pause(0.05)
+            #plt.pause(0.05)
+            fig.savefig(f"tmp_plot_{str(plot_counter).zfill(5)}.png")
             print('t=%f, umin=%g, umax=%g'%(t,np.amin(u),np.amax(u)))
     succ = 0
+    # image processing stuff
+    os.system("convert   -delay 10   -loop 0   tmp_plot_*.png   two_elem_conv_diff.gif")
+    os.system("rm tmp_plot_*.png")
     return succ
 
-p    = 15
-nu   = 1.e-2
-T    = 10.
-nt   = 1000
-nplt = 20
+p    = 20
+nu   = 1.e-1
+T    = 3.
+nt   = 500
+nplt = 40
 succ = advdif(p,nu,T,nt,nplt)
 

@@ -1,4 +1,6 @@
 import numpy as np
+import semsetup
+import scipy.interpolate as si
 def make_scatter(p):
     """
     Explicitly form the Q matrix for the scatter operation.
@@ -30,27 +32,45 @@ def make_scatter(p):
                 global_id_count += 1
             local_id_count += 1
     return Q, boundary_nodes 
-def mask(p):
-    nglobal = 2*(p+1)**2 - (p+1)
-    nelem = (p+1)
-    bools = np.ones(nglobal)
+def make_scatter(p1,p2):
+    """
+    Explicitly form the Q matrix for the scatter operation.
+    Gather is simply Q.T.
+    Also, determine the global ids that correspond to the boundary of the system
+    """
+    _,_,_,_,z1,_ = semhat(p1)
+    _,_,_,_,z2,_ = semhat(p2)
+    nglobal = (p1+1)**2 + (p2+1)**2 - (p2+1)
+    nlocal = (p1+1)**2 + (p2+1)**2
+    ndof_elem1 = (p1+1)**2
+    ndof_elem2 = (p2+1)**2
+    Q = np.zeros((nlocal,nglobal))
+    local_id_count = 0
     global_id_count = 0
-    # E1 subsetting
-    for i in range(nelem):
-        for j in range(nelem):
-            global_id = i*(p+1)+j
+    boundary_nodes=set()
+    # z1 are the coordinates we are setting up our interpolation on
+    # to interpolate onto the points z2
+    poly = si.lagrange(z1)
+    for i in range(p1+1):
+        for j in range(p1+1):
+            Q[local_id_count, global_id_count] = 1
+            local_id_count += 1
+            if i == 0 or i == p1 or j == 0:
+                boundary_nodes.add(global_id_count)
             global_id_count += 1
-            if i == 0 or j == 0 or i == p:
-                bools[global_id]=0
-    # E2 subsettings
-    for i in range(nelem):
-        for j in range(nelem):
-            #global_id = (p+1)**2 + i*p + j
-            if i == 0 or j == p or i == p:
-                bools[global_id_count]=0
-            if j != 0:
+    for i in range(p2+1):
+        for j in range(p2+1):
+            if j == 0:
+                #Q[local_id_count,i*(p+1)+p] = 1
+                # Do some interpolation scheme here
+
+            else:
+                Q[local_id_count,global_id_count] = 1
+                if i == 0 or i == p2 or j == p2:
+                    boundary_nodes.add(global_id_count)
                 global_id_count += 1
-    return bools
+            local_id_count += 1
+    return Q, boundary_nodes 
 def restrict(p, boundary):
     num_global_ids = 2*(p+1)**2 - (p+1)
     # rectangle is made up of [2*(p+1)-1]x[p+1] nodes

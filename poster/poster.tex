@@ -164,16 +164,19 @@
       boundary layer itself. However, by relaxing the $H^1$ constraint of the
       conforming spectral element method (SEM), one may achieve greater flexibility
       in the spectral decomposition, allowing for $p$-adaptivity of elements near
-      boundary layers.
+      boundary layers. This is known as the mortar spectral element method (MSEM).
       \end{tcolorbox}
 
       \begin{tcolorbox}[toplevelbox,adjusted title=Approach]
       \begin{figure}
+      \begin{center}
       \includegraphics[
-  viewport=1.56cm 15.24cm 11.78cm 19.93cm,clip=true,page=386,width=\textwidth
-]{textbook.pdf}
+  width=\textwidth
+]{omega1omega2}
+\end{center}
 
-\caption{Example of a geometrically confroming domain decomposition. Photo credit: [1]}
+\caption{Example of a geometrically confroming domain decomposition, $N_1 = 5$ and $N_2 = 8$.}
+\label{fig:domaindecomp}
       \end{figure}
 \begin{enumerate}
 \def\labelenumi{\arabic{enumi}.}
@@ -185,7 +188,7 @@
 \item
   Across the interface, \(\Gamma\), between two elements \(i\) and
   \(j\), impose an \(L_2\) continuity requirement
-  \(\int_{\Gamma}(u_i-u_j)\psi d\tau = 0\ \forall \psi \in \mathbb{P}_{N_i-2}(\Gamma)\)
+  \(\int_{\Gamma}(u_i-u_j)\psi d\tau = 0\ \forall \psi \in \mathbb{P}_{N_i-2}(\Gamma)\).
 \end{enumerate}
 
 For the two subdomain case with \(\Omega_1\) being the independent side and \(\Omega_2\)
@@ -201,9 +204,17 @@ this further simplifiers into a (variable-resolution) conforming case, which is 
       \end{tcolorbox}
 
       \begin{tcolorbox}[toplevelbox,adjusted title= Test Cases]
-        Insert even more details here.
+      Solve in rectangular domain (\ref{fig:domaindecomp}) $[-2,2]\times[-1,1]$
+      the following PDEs (homogeneous Dirichlet B.C. on $\partial\Omega$):
+\begin{enumerate}
+\item
+$-\Delta u = f$
+\item
+$\dfrac{\partial u}{\partial t} = \nu \Delta u +f$, for $t\in[0,10]$.
+\end{enumerate}
+      Compare convergence rates agains a single element SEM, SEM with two elements,
+      and a MSEM with two elements of varying polynomial degree.
       \end{tcolorbox}
-
     \end{column}
 
     % }}}
@@ -220,7 +231,7 @@ this further simplifiers into a (variable-resolution) conforming case, which is 
       \end{tcolorbox}
 
       \begin{tcolorbox}[toplevelbox,adjusted title=References]
-      [1] M. O. Deville, P. F. Fischer, and E. H. Mund, High-Order Methods for Incompressible Fluid Flow. Cambridge: Cambridge University Press, 2002.
+      M. O. Deville, P. F. Fischer, and E. H. Mund, High-Order Methods for Incompressible Fluid Flow. Cambridge: Cambridge University Press, 2002.
       \end{tcolorbox}
 
     \end{column}
