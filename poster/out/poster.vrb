@@ -1,0 +1,79 @@
+\frametitle{}
+\begin{columns}[t]
+
+    % {{{ left column
+
+    \begin{column}{.45\linewidth}
+      \begin{tcolorbox}[toplevelbox,adjusted title={Problem Statement}]
+      Often in finite element methods, resolving a boundary layer requires
+      the use of tighly packed elements throughout the mesh. In conforming
+      elements, such an arrangement incurs the penalty of bad aspect ratio elements.
+      The effect of pouring in additional conforming elements at the boundary layer
+      further results in an undue number of elements, especially far away from the
+      boundary layer itself. However, by relaxing the $H^1$ constraint of the
+      conforming spectral element method (SEM), one may achieve greater flexibility
+      in the spectral decomposition, allowing for $p$-adaptivity of elements near
+      boundary layers.
+      \end{tcolorbox}
+
+      \begin{tcolorbox}[toplevelbox,adjusted title=Approach]
+      \begin{figure}
+      \includegraphics[
+  viewport=1.56cm 15.24cm 11.78cm 19.93cm,clip=true,page=386,width=\textwidth
+]{textbook.pdf}
+
+\caption{Example of a geometrically confroming domain decomposition. Photo credit: [1]}
+      \end{figure}
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\item
+  Divide \(\Omega\) into \(E\) nonoverlapping subdomains, such that
+  \(\Omega=\bigcup_{e=1}^{E} \Omega ^e\).
+\item
+  Assign (non-unique) mortars to the surfaces between two different subdomains, assigning dependent and independent sides.
+\item
+  Across the interface, \(\Gamma\), between two elements \(i\) and
+  \(j\), impose an \(L_2\) continuity requirement
+  \(\int_{\Gamma}(u_i-u_j)\psi d\tau = 0\ \forall \psi \in \mathbb{P}_{N_i-2}(\Gamma)\)
+\end{enumerate}
+
+For the two subdomain case with \(\Omega_1\) being the independent side and \(\Omega_2\)
+being the dependent side and $N_1 \le N_2$, the continuity requirement from (3) results
+in a simple interpolation scheme:
+\begin{equation}
+\tilde{u}^2(s) = \tilde{u}^1(s) + \alpha L_{N_2}(s) + \beta L_{N_2-1}(s) \nonumber ,
+\end{equation}
+where the coefficients, $\alpha$, $\beta$, are expressed in terms of $\tilde{u_0}^2$ and
+$\tilde{u}_{N_2}^2$. Imposing direct continuity on the vertices of $\Omega_1$ and $\Omega_2$,
+this further simplifiers into a (variable-resolution) conforming case, which is considered here.
+
+      \end{tcolorbox}
+
+      \begin{tcolorbox}[toplevelbox,adjusted title= Test Cases]
+        Insert even more details here.
+      \end{tcolorbox}
+
+    \end{column}
+
+    % }}}
+
+    % {{{ right column
+
+    \begin{column}{.45\linewidth}
+      \begin{tcolorbox}[toplevelbox,adjusted title=Tech Detail 2]
+        Even more text.
+      \end{tcolorbox}
+
+      \begin{tcolorbox}[toplevelbox,adjusted title=Results]
+        Even more text.
+      \end{tcolorbox}
+
+      \begin{tcolorbox}[toplevelbox,adjusted title=References]
+      [1] M. O. Deville, P. F. Fischer, and E. H. Mund, High-Order Methods for Incompressible Fluid Flow. Cambridge: Cambridge University Press, 2002.
+      \end{tcolorbox}
+
+    \end{column}
+
+    % }}}
+
+  \end{columns}

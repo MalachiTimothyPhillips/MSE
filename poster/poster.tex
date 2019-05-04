@@ -1,0 +1,235 @@
+\documentclass[final,t]{beamer}
+
+% retrieved from
+% http://www-i6.informatik.rwth-aachen.de/~dreuw/latexbeamerposter.php
+
+% {{{ preamble
+
+% Siebel poster printer paper width -- ANSI E: 34"x44"
+% Fedex Office: 24"x36" or 36"x48"
+
+\pgfmathsetmacro{\posterheight}{34*2.54}
+\pgfmathsetmacro{\posterwidth}{22*2.54}
+
+\usepackage[orientation=landscape,size=custom,width=\posterwidth,height=\posterheight,scale=1.18]{beamerposter}
+
+\mode<presentation>
+\usetheme{uiucposter}
+
+% {{{ additional packages
+
+\usepackage{lipsum}
+\usepackage[utf8]{inputenc}
+%\usepackage{times}
+\usepackage{amsmath,amsthm, amssymb, latexsym}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{exscale}
+%\usepackage[lighttt]{lmodern}
+%\boldmath
+\usepackage{booktabs, array}
+%\usepackage{rotating} %sideways environment
+\usepackage[english]{babel}
+\usepackage{wrapfig}
+\usepackage[skins,listings]{tcolorbox}
+
+\pgfdeclarelayer{foreground}
+\pgfsetlayers{main,foreground}
+
+% }}}
+
+% {{{ tikz
+
+\usepackage{tikz}
+\usetikzlibrary{calc}
+\usetikzlibrary{positioning}
+\usetikzlibrary{fadings}
+\usetikzlibrary{chains}
+\usetikzlibrary{scopes}
+\usetikzlibrary{shadows}
+\usetikzlibrary{arrows}
+\usetikzlibrary{snakes}
+\usetikzlibrary{shapes.misc}
+\usetikzlibrary{shapes.symbols}
+\usetikzlibrary{shapes.multipart}
+\usetikzlibrary{fit}
+\usetikzlibrary{shapes.arrows}
+\usetikzlibrary{shapes.geometric}
+\usetikzlibrary{shapes.callouts}
+\usetikzlibrary{decorations.text}
+
+% }}}
+
+% {{{ box config
+
+\tcbset{toplevelbox/.style={%
+    enhanced,
+    fuzzy shadow={5mm}{-5mm}{0mm}{1mm}{black},
+    colback=white,
+    fonttitle=\bfseries,
+    coltitle=white,
+    colframe=uiucblue,
+    boxsep=20pt,
+    arc=10pt,
+    top=0pt,
+    boxrule=0pt,
+    toptitle=-10pt,
+    bottomtitle=-10pt,
+    enlarge bottom by=1.25cm,
+    titlerule=0pt,
+  }
+}
+
+% }}}
+
+% {{{ listing config
+
+\tcbset{listing engine=listings}
+\tcbset{listingbox/.style={%
+    enhanced,
+    %boxsep=-9pt,
+    %left=15pt,
+    arc=7pt,
+    enlarge top by=4mm,
+    %enlarge bottom by=1mm,
+    boxrule=2pt,
+  }
+}
+
+\definecolor{green}{RGB}{0, 180, 0}
+
+\lstdefinestyle{custompython}{%
+  %belowcaptionskip=1\baselineskip,
+  breaklines=true,
+  frame=none,
+  xleftmargin=\parindent,
+  language=Python,
+  showstringspaces=false,
+  basicstyle=\ttfamily,
+  keywordstyle=\bfseries\color{uiucblue},
+  commentstyle=\itshape\color{purple},
+  identifierstyle=\color{black},
+  stringstyle=\color{uiuclightblue},
+  keywords=[2]{as,True,False},
+  keywordstyle=[2]\bfseries\color{green!40!black},
+  otherkeywords={>>>,...},
+  keywordstyle=[3]\bfseries\color{blue},
+  numbers=none,
+  columns=flexible,
+  rangebeginprefix=\>\>\>\ \#\ ,
+  rangeendprefix=\>\>\>\ \#\ ,
+  includerangemarker=false,
+}
+
+\newtcbinputlisting{\mylisting}[2][]{%
+  listing file={#2},
+  listingbox,
+  listing only,
+  listing options={style=custompython,linerange=#1},
+}
+
+% }}}
+
+% Display a grid to help align images
+%\beamertemplategridbackground[1cm]
+
+% }}}
+
+
+% {{{ front matter
+
+\title{Mortar Spectral Element Method}
+\author{Malachi Phillips \texttt{<malachi2@illinois.edu>}}
+\institute{%
+  Computer Science
+  $\cdot$ University of Illinois
+}
+\date{May 8, 2019}
+
+% }}}
+
+\begin{document}
+\begin{frame}[fragile]{}
+  \begin{columns}[t]
+
+    % {{{ left column
+
+    \begin{column}{.45\linewidth}
+      \begin{tcolorbox}[toplevelbox,adjusted title={Problem Statement}]
+      Often in finite element methods, resolving a boundary layer requires
+      the use of tighly packed elements throughout the mesh. In conforming
+      elements, such an arrangement incurs the penalty of bad aspect ratio elements.
+      The effect of pouring in additional conforming elements at the boundary layer
+      further results in an undue number of elements, especially far away from the
+      boundary layer itself. However, by relaxing the $H^1$ constraint of the
+      conforming spectral element method (SEM), one may achieve greater flexibility
+      in the spectral decomposition, allowing for $p$-adaptivity of elements near
+      boundary layers.
+      \end{tcolorbox}
+
+      \begin{tcolorbox}[toplevelbox,adjusted title=Approach]
+      \begin{figure}
+      \includegraphics[
+  viewport=1.56cm 15.24cm 11.78cm 19.93cm,clip=true,page=386,width=\textwidth
+]{textbook.pdf}
+
+\caption{Example of a geometrically confroming domain decomposition. Photo credit: [1]}
+      \end{figure}
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\item
+  Divide \(\Omega\) into \(E\) nonoverlapping subdomains, such that
+  \(\Omega=\bigcup_{e=1}^{E} \Omega ^e\).
+\item
+  Assign (non-unique) mortars to the surfaces between two different subdomains, assigning dependent and independent sides.
+\item
+  Across the interface, \(\Gamma\), between two elements \(i\) and
+  \(j\), impose an \(L_2\) continuity requirement
+  \(\int_{\Gamma}(u_i-u_j)\psi d\tau = 0\ \forall \psi \in \mathbb{P}_{N_i-2}(\Gamma)\)
+\end{enumerate}
+
+For the two subdomain case with \(\Omega_1\) being the independent side and \(\Omega_2\)
+being the dependent side and $N_1 \le N_2$, the continuity requirement from (3) results
+in a simple interpolation scheme:
+\begin{equation}
+\tilde{u}^2(s) = \tilde{u}^1(s) + \alpha L_{N_2}(s) + \beta L_{N_2-1}(s) \nonumber ,
+\end{equation}
+where the coefficients, $\alpha$, $\beta$, are expressed in terms of $\tilde{u_0}^2$ and
+$\tilde{u}_{N_2}^2$. Imposing direct continuity on the vertices of $\Omega_1$ and $\Omega_2$,
+this further simplifiers into a (variable-resolution) conforming case, which is considered here.
+
+      \end{tcolorbox}
+
+      \begin{tcolorbox}[toplevelbox,adjusted title= Test Cases]
+        Insert even more details here.
+      \end{tcolorbox}
+
+    \end{column}
+
+    % }}}
+
+    % {{{ right column
+
+    \begin{column}{.45\linewidth}
+      \begin{tcolorbox}[toplevelbox,adjusted title=Tech Detail 2]
+        Even more text.
+      \end{tcolorbox}
+
+      \begin{tcolorbox}[toplevelbox,adjusted title=Results]
+        Even more text.
+      \end{tcolorbox}
+
+      \begin{tcolorbox}[toplevelbox,adjusted title=References]
+      [1] M. O. Deville, P. F. Fischer, and E. H. Mund, High-Order Methods for Incompressible Fluid Flow. Cambridge: Cambridge University Press, 2002.
+      \end{tcolorbox}
+
+    \end{column}
+
+    % }}}
+
+  \end{columns}
+\end{frame}
+
+\end{document}
+
+% vim: foldmethod=marker
