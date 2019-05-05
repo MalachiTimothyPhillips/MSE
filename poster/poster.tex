@@ -38,6 +38,8 @@
 
 % }}}
 
+%\usepackage{svg}
+
 % {{{ tikz
 
 \usepackage{tikz}
@@ -64,7 +66,7 @@
 
 \tcbset{toplevelbox/.style={%
     enhanced,
-    fuzzy shadow={5mm}{-5mm}{0mm}{1mm}{black},
+    fuzzy shadow={5mm}{-5mm}{0mm}{1mm}{gray},
     colback=white,
     fonttitle=\bfseries,
     coltitle=white,
@@ -175,8 +177,7 @@
 ]{omega1omega2}
 \end{center}
 
-\caption{Example of a geometrically confroming domain decomposition, $N_1 = 5$ and $N_2 = 8$.}
-\label{fig:domaindecomp}
+\caption{\label{fig:domaindecomp} Example of a geometrically confroming domain decomposition, $N_1 = 5$ and $N_2 = 8$.}
       \end{figure}
 \begin{enumerate}
 \def\labelenumi{\arabic{enumi}.}
@@ -210,10 +211,10 @@ this further simplifiers into a (variable-resolution) conforming case, which is 
 \item
 $-\Delta u = f$
 \item
-$\dfrac{\partial u}{\partial t} = \nu \Delta u +f$, for $t\in[0,10]$.
+$\dfrac{\partial u}{\partial t} + \boldsymbol{c} \cdot \nabla u = \nu \Delta u +f$, for $t\in[0,3]$.
 \end{enumerate}
-      Compare convergence rates agains a single element SEM, SEM with two elements,
-      and a MSEM with two elements of varying polynomial degree.
+      Compare convergence rates against SEM ($E=1,2$)
+      and a MSEM ($E=2$) of varying polynomial degree.
       \end{tcolorbox}
     \end{column}
 
@@ -222,16 +223,35 @@ $\dfrac{\partial u}{\partial t} = \nu \Delta u +f$, for $t\in[0,10]$.
     % {{{ right column
 
     \begin{column}{.45\linewidth}
-      \begin{tcolorbox}[toplevelbox,adjusted title=Tech Detail 2]
-        Even more text.
-      \end{tcolorbox}
 
       \begin{tcolorbox}[toplevelbox,adjusted title=Results]
-        Even more text.
+      \begin{figure}
+      \begin{center}
+      \includegraphics[
+  width=\textwidth
+]{errplot_pdf}
+\end{center}
+
+\caption{\label{fig:convplot} Error compared to true solution for Poisson's equation in $\Omega_2$.}
+      \end{figure}
+As shown in above figure, the MSEM converges for mixed polynomial orders. However, the error is minimized whenever the polynomial orders match.
+      \begin{figure}
+      \begin{center}
+      \includegraphics[
+  width=\textwidth
+]{../poster/conv_diff_single_elem_t_06}
+\end{center}
+
+\caption{\label{fig:convdiffplot} Convection-diffusion equation solution at $t=0.6 s$ for $E=1$ SEM, $p=30$.}
+      \end{figure}
+      
       \end{tcolorbox}
 
       \begin{tcolorbox}[toplevelbox,adjusted title=References]
       M. O. Deville, P. F. Fischer, and E. H. Mund, High-Order Methods for Incompressible Fluid Flow. Cambridge: Cambridge University Press, 2002.
+      \end{tcolorbox}
+      \begin{tcolorbox}[toplevelbox,adjusted title=GitHub]
+      https://github.com/MalachiTimothyPhillips/MSE
       \end{tcolorbox}
 
     \end{column}

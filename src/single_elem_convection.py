@@ -181,33 +181,38 @@ def advdif(p,nu,T,nt,nplt):
             u = u.reshape((n1,n1))
             plot_counter += 1
             plt.clf()
-            ax1 = fig.add_subplot(1,2,1)
-            surf = ax1.contourf(X,Y,u, levels=np.linspace(0.0,1,9))
+            fig1, ax1 = plt.subplots()
+            #ax1 = fig.add_subplot(1,2,1)
+            surf = plt.contourf(X,Y,u, levels=np.linspace(0.0,1,9))
             #surf = ax1.contourf(X,Y,u)
-            fig.colorbar(surf)
+            fig1.colorbar(surf)
             ax1.quiver(X,Y,cx,cy,scale=10,headwidth=5,headlength=10)
-            ax1.set_title('t=%f'%t)
-            ax = fig.add_subplot(1,2,2,projection='3d')
-            wframe = ax.plot_wireframe(X, Y, u)
-            ax.set_zlim(0,1)
-            ax.set_xlabel('X')
-            ax.set_ylabel('Y')
-            ax.set_zlabel('u')
+            #plt.title('t=%f'%t)
+            plt.title(f"$u$ at t={t}")
+            plt.xlabel("x")
+            plt.ylabel("y")
+            #plt.axis("equal")
+            #ax = fig.add_subplot(1,2,2,projection='3d')
+            #wframe = ax.plot_wireframe(X, Y, u)
+            #ax.set_zlim(0,1)
+            #ax.set_xlabel('X')
+            #ax.set_ylabel('Y')
+            #ax.set_zlabel('u')
             #plt.pause(0.05)
-            fig.savefig(f"tmp_plot_{str(plot_counter).zfill(5)}.png")
+            fig1.savefig(f"tmp_plot_{str(plot_counter).zfill(5)}.pdf")
             print('t=%f, umin=%g, umax=%g'%(t,np.amin(u),np.amax(u)))
             u = u.reshape((n1*n1,))
 
     succ = 0
     # image processing stuff
-    os.system("convert   -delay 10   -loop 0   tmp_plot_*.png   single_elem_conv_diff.gif")
-    os.system("rm tmp_plot_*.png")
+    #os.system("convert   -delay 10   -loop 0   tmp_plot_*.png   single_elem_conv_diff.gif")
+    #os.system("rm tmp_plot_*.png")
     return succ
 
 p    = 30
 nu   = 1.e-1
 T    = 3
 nt   = 500
-nplt = 40
+nplt = 5
 succ = advdif(p,nu,T,nt,nplt)
 
