@@ -35,108 +35,107 @@ import scipy.linalg as sl
 import time
 from mpl_toolkits.mplot3d import axes3d
 
-def uinit(x,y,x1,x2,y1,y2):
+def uinit(x1,x2,y1,y2):
     Lx = 4
     y_comp1 = 2/3*np.pi*y1*y1+1/2*np.pi
     y_comp2 = 2/3*np.pi*y2*y2+1/2*np.pi
-    y_comp = 2/3*np.pi*y*y+1/2*np.pi
     cx1 = np.multiply(np.cos(np.pi*x1/Lx),np.cos(np.pi*y1)) # Better choice of C
     cx2 = np.multiply(np.cos(np.pi*x2/Lx),np.cos(np.pi*y2)) # Better choice of C
     cy1 = np.multiply(np.sin(np.pi*x1/Lx),np.sin(y_comp1))
     cy2 = np.multiply(np.sin(np.pi*x2/Lx),np.sin(y_comp2))
-    cx = np.multiply(np.cos(np.pi*x/Lx),np.cos(np.pi*y)) # Better choice of C
-    cy = np.multiply(np.sin(np.pi*x/Lx),np.sin(y_comp))
-    #cx1 = 0*x1
-    #cy1 = 0*y1
-    #cx2 = 0*x2
-    #cy2 = 0*y2
-    #cx = 0*x
-    #cy = 0*y
-    u = np.exp(-(x**2.+y**2.))  # u0
+    u01 = np.exp(-(x1**2.+y1**2.))  # u0
+    u02 = np.exp(-(x2**2.+y2**2.))  # u0
     src = 0.  # Source term
-    return cx, cy, cx1,cx2, cy1,cy2, u, src
+    return cx1,cx2, cy1,cy2, u01, u02, src
 debug = True
-def advdif(p,nu,T,nt,nplt):
+def advdif(p1,p2,nu,T,nt,nplt):
     """
     Problem simulates advection/diffusion equation in a two dimensional rectangular domain,
     where the x dimension goes in -2 to 2
     and the y dimension goes in -1 to 1
     """
-    ah,bh,ch,dh,z,w = semhat(p)
-    nx = 2*(p+1)-1
-    ny = p+1
-    npt_elem = p+1
-    Q, boundary = make_scatter(p) # scatter operator, used for assembly
-    x = np.hstack((z-1,z[1:]+1))
-    x1 = z-1 # x points associated with lhs element
-    x2 = z+1 # x points associated with rhs element
-    y = z
-    [X,Y] = np.meshgrid(x,y)
-    [X1,Y1] = np.meshgrid(x1,y)
-    [X2,Y2] = np.meshgrid(x2,y)
-    X = X.T
-    Y = Y.T
+    ah1,bh1,ch1,dh1,z1,w1 = semhat(p1)
+    ah2,bh2,ch2,dh2,z2,w2 = semhat(p2)
+    nx = (p1+1)+(p2+1)-1
+    ny1 = p1+1
+    nx1 = p1+1
+    npt_elem1 = p1+1
+    npt_elem2 = p2+1
+    Q, boundary = make_scatter_mse(p1,p2) # scatter operator, used for assembly
+    x1 = z1-1 # x points associated with lhs element
+    x2 = z2+1 # x points associated with rhs element
+    y1 = z1
+    y2 = z2
+    [X1,Y1] = np.meshgrid(x1,y1)
+    [X2,Y2] = np.meshgrid(x2,y2)
     X1 = X1.T
     Y1 = Y1.T
     X2 = X2.T
     Y2 = Y2.T
-    cx, cy, cx1, cx2, cy1,cy2, u0,src = uinit(X,Y,X1,X2,Y1,Y2)
-    Ie = sp.sparse.eye(npt_elem).tocsr()
-    Bbar = spp.kron(bh,bh)
-    Dx = spp.kron(Ie,dh)
-    Dy = spp.kron(dh,Ie)
-    cx1 = cx1.reshape((npt_elem*npt_elem,))
-    cy1 = cy1.reshape((npt_elem*npt_elem,))
-    cx2 = cx2.reshape((npt_elem*npt_elem,))
-    cy2 = cy2.reshape((npt_elem*npt_elem,))
-    # FastDiagM setup
-    Lx = 2
-    Ly = 2 # all elements are merely the reference element
-    Abar = Lx/Ly*spp.kron(ah,bh) + Ly/Lx*spp.kron(bh,ah)
+    cx1, cx2, cy1,cy2, u1, u2,src = uinit(X1,X2,Y1,Y2)
+    Ie1 = sp.sparse.eye(npt_elem1).tocsr()
+    Ie2 = sp.sparse.eye(npt_elem2).tocsr()
+    Bbar1 = spp.kron(bh1,bh1)
+    Dx1 = spp.kron(Ie1,dh1)
+    Dy1 = spp.kron(dh1,Ie1)
+    Bbar2 = spp.kron(bh2,bh2)
+    Dx2 = spp.kron(Ie2,dh2)
+    Dy2 = spp.kron(dh2,Ie2)
+    cx1 = cx1.reshape((npt_elem1*npt_elem1,))
+    cy1 = cy1.reshape((npt_elem1*npt_elem1,))
+    cx2 = cx2.reshape((npt_elem2*npt_elem2,))
+    cy2 = cy2.reshape((npt_elem2*npt_elem2,))
+    Abar1 = spp.kron(ah1,bh1) + spp.kron(bh1,ah1)
+    Abar2 = spp.kron(ah2,bh2) + spp.kron(bh2,ah2)
     dt = T/float(nt)
     dti = 1./dt
     al, bt = bdfext_setup()
     ndt = int(nt/nplt)
     if(ndt==0):
         ndt = 1
-    u  = u0
-    f1 = np.zeros((nx*ny,))
+
+    # actual R to be using here
+    R = restrict_mse(p1,p2,boundary)
+    u1v = u1.reshape((npt_elem1*npt_elem1,))
+    u2v = u2.reshape((npt_elem2*npt_elem2,))
+    uL = np.hstack([u1v,u2v])
+    u = R.T@R@Q.T@uL
+    u1_plot,u2_plot = reorder_u_for_plot_mse(u,p1,p2)
+    f1 = np.zeros((u.shape[0],))
     f2 = f1.copy()
     f3 = f2.copy()
     fb1 = f1.copy()
     fb2 = f1.copy()
     fb3 = f1.copy()
 
-    # actual R to be using here
-    R = restrict(p,boundary)
-    u_vec = reorder_u(u,p)
-    uinner=R@u_vec
-    u = R.T@uinner
-    uplot = reorder_u_for_plot(u,p)
-
     t = 0.
     # Plot initial field
     fig = plt.figure(figsize=(12,6))
     ax1 = fig.add_subplot(1,2,1)
     #surf = ax1.contourf(X,Y,uplot)
-    surf = ax1.contourf(X,Y,uplot, levels=np.linspace(0.0,1,9))
+    surf = ax1.contourf(X1,Y1,u1_plot.T, levels=np.linspace(0.0,1,9))
+    surf2 = ax1.contourf(X2,Y2,u2_plot.T, levels=np.linspace(0.0,1,9))
     fig.colorbar(surf)
-    ax1.quiver(X,Y,cx,cy,scale=10,headwidth=5,headlength=10)
+    ax1.quiver(X1,Y1,cx1,cy1,scale=10,headwidth=5,headlength=10)
+    ax1.quiver(X2,Y2,cx2,cy2,scale=10,headwidth=5,headlength=10)
     ax1.set_title('t=%f'%t)
     ax = fig.add_subplot(1,2,2,projection='3d')
-    wframe = ax.plot_wireframe(X, Y, uplot)
+    wframe = ax.plot_wireframe(X1, Y1, u1_plot)
+    wframe = ax.plot_wireframe(X2, Y2, u2_plot)
     ax.set_xlabel('X')
     ax.set_zlim(0,1)
     ax.set_ylabel('Y')
     ax.set_zlabel('u')
-    #plt.pause(0.5)
+    #plt.show()
+    #exit()
     plot_counter = 0
-    fig.savefig(f"tmp_plot_{str(plot_counter).zfill(5)}.png")
+    #fig.savefig(f"tmp_plot_{str(plot_counter).zfill(5)}.png")
 
     # Form local DOF matrices
-    AL = spp.kron(spp.eye(2),Abar)
-    BL = spp.kron(spp.eye(2),Bbar)
-    Be = Bbar.copy()
+    AL = spp.block_diag((Abar1,Abar2))
+    BL = spp.block_diag((Bbar1,Bbar2))
+    Be1 = Bbar1.copy()
+    Be2 = Bbar2.copy()
     Abar = Q.T@AL@Q
     Bbar = Q.T@BL@Q
 
@@ -145,10 +144,15 @@ def advdif(p,nu,T,nt,nplt):
             ali = al[i,:]
             bti = bt[i,:]
         uL = Q@u
-        u1 = uL[0:npt_elem*npt_elem]
-        u2 = uL[npt_elem*npt_elem:]
-        w1 = Be@(cx1*(Dx@u1)+cy1*(Dy@u1))
-        w2 = Be@(cx2*(Dx@u2)+cy2*(Dy@u2))
+        u1 = uL[0:npt_elem1*npt_elem1]
+        u2 = uL[npt_elem1*npt_elem1:]
+        w1 = Be1@(cx1*(Dx1@u1)+cy1*(Dy1@u1))
+        #if(i==0):
+        #    print("=== DEBUG ===")
+        #    print(f"u2 shape: {u2.shape}")
+        #    print(f"Dx shape: {u2.shape}")
+
+        w2 = Be2@(cx2*(Dx2@u2)+cy2*(Dy2@u2))
         w = np.hstack([w1,w2])
         w = Q.T@w
         ## Advection term, to be extrapolated
@@ -177,34 +181,31 @@ def advdif(p,nu,T,nt,nplt):
         
         if((i+1)%ndt==0 or i==nt-1):
             plot_counter += 1
-            uplot = reorder_u_for_plot(u,p)
             plt.clf()
-            ax1 = fig.add_subplot(1,2,1)
+            fig1, ax1 = plt.subplots()
+            u1_plot,u2_plot = reorder_u_for_plot_mse(u,p1,p2)
             #surf = ax1.contourf(X,Y,uplot)
-            surf = ax1.contourf(X,Y,uplot, levels=np.linspace(0.0,1,9))
-            fig.colorbar(surf)
-            ax1.quiver(X,Y,cx,cy,scale=10,headwidth=5,headlength=10)
+            surf = plt.contourf(X1,Y1,u1_plot.T, levels=np.linspace(0.0,1,9))
+            surf2 = plt.contourf(X2,Y2,u2_plot, levels=np.linspace(0.0,1,9))
+            fig1.colorbar(surf)
+            ax1.quiver(X1,Y1,cx1,cy1,scale=10,headwidth=5,headlength=10)
+            ax1.quiver(X2,Y2,cx2,cy2,scale=10,headwidth=5,headlength=10)
             ax1.set_title('t=%f'%t)
-            ax = fig.add_subplot(1,2,2,projection='3d')
-            wframe = ax.plot_wireframe(X, Y, uplot)
-            u = u.reshape((nx*ny,))
-            ax.set_zlim(0,1)
-            ax.set_xlabel('X')
-            ax.set_ylabel('Y')
-            ax.set_zlabel('u')
+            plt.show()
+            exit()
             #plt.pause(0.05)
-            fig.savefig(f"tmp_plot_{str(plot_counter).zfill(5)}.png")
+            fig1.savefig(f"tmp_plot_{str(plot_counter).zfill(5)}.png")
             print('t=%f, umin=%g, umax=%g'%(t,np.amin(u),np.amax(u)))
     succ = 0
     # image processing stuff
-    os.system("convert   -delay 10   -loop 0   tmp_plot_*.png   two_elem_conv_diff.gif")
-    os.system("rm tmp_plot_*.png")
+    #os.system("convert   -delay 10   -loop 0   tmp_plot_*.png   two_elem_conv_diff.gif")
+    #os.system("rm tmp_plot_*.png")
     return succ
 
-p    = 20
+p    = 15
 nu   = 1.e-1
 T    = 3.
 nt   = 500
-nplt = 40
-succ = advdif(p,nu,T,nt,nplt)
+nplt = 5
+succ = advdif(p,20,nu,T,nt,nplt)
 

@@ -177,7 +177,7 @@
 ]{omega1omega2}
 \end{center}
 
-\caption{\label{fig:domaindecomp} Example of a geometrically confroming domain decomposition, $N_1 = 5$ and $N_2 = 8$.}
+\caption{\label{fig:domaindecomp} Example of a geometrically confroming domain decomposition, $p_1 = 5$ and $p_2 = 8$.}
       \end{figure}
 \begin{enumerate}
 \def\labelenumi{\arabic{enumi}.}
@@ -205,8 +205,8 @@ this further simplifiers into a (variable-resolution) conforming case, which is 
       \end{tcolorbox}
 
       \begin{tcolorbox}[toplevelbox,adjusted title= Test Cases]
-      Solve in rectangular domain (\ref{fig:domaindecomp}) $[-2,2]\times[-1,1]$
-      the following PDEs (homogeneous Dirichlet B.C. on $\partial\Omega$):
+      Solve in the rectangular domain (\ref{fig:domaindecomp}) $[-2,2]\times[-1,1]$
+      the following PDEs with homogeneous Dirichlet B.C. on $\partial\Omega$:
 \begin{enumerate}
 \item
 $-\Delta u = f$
@@ -234,7 +234,7 @@ $\dfrac{\partial u}{\partial t} + \boldsymbol{c} \cdot \nabla u = \nu \Delta u +
 
 \caption{\label{fig:convplot} Error compared to true solution for Poisson's equation in $\Omega_2$.}
       \end{figure}
-As shown in above figure, the MSEM converges for mixed polynomial orders. However, the error is minimized whenever the polynomial orders match.
+As shown in the above figure, the MSEM converges for mixed polynomial orders. However, the error is minimized whenever the polynomial orders match.
       \begin{figure}
       \begin{center}
       \includegraphics[
@@ -244,16 +244,23 @@ As shown in above figure, the MSEM converges for mixed polynomial orders. Howeve
 
 \caption{\label{fig:convdiffplot} Convection-diffusion equation solution at $t=0.6 s$ for $E=1$ SEM, $p=30$.}
       \end{figure}
+      \begin{figure}
+      \begin{center}
+      \includegraphics[
+  width=\textwidth
+]{conv_diff_mse_t_06.pdf}
+\end{center}
+
+\caption{\label{fig:convdiffplotmse} Convection-diffusion equation solution at $t=0.6 s$ for $E=2$ MSEM, $p_1=20$, $p_2=30$.}
+      \end{figure}
       
       \end{tcolorbox}
 
       \begin{tcolorbox}[toplevelbox,adjusted title=References]
       M. O. Deville, P. F. Fischer, and E. H. Mund, High-Order Methods for Incompressible Fluid Flow. Cambridge: Cambridge University Press, 2002.
-      \end{tcolorbox}
-      \begin{tcolorbox}[toplevelbox,adjusted title=GitHub]
-      https://github.com/MalachiTimothyPhillips/MSE
-      \end{tcolorbox}
 
+      * https://github.com/MalachiTimothyPhillips/MSE
+      \end{tcolorbox}
     \end{column}
 
     % }}}

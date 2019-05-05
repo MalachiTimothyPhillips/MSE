@@ -126,17 +126,16 @@ def reorder_u(u,p):
             u_vec[entry] = u[i,j]
             entry += 1
     return u_vec
-def reorder_u_mse(u,p1,p2):
-    nx,ny = u.shape
+def reorder_u_mse(u1,u2,p1,p2):
     u_vec = np.zeros(nx*ny)
     entry = 0
     for j in range(p1+1):
         for i in range(p1+1):
-            u_vec[entry] = u[i,j]
+            u_vec[entry] = u1[i,j]
             entry += 1
     for j in range(p2+1):
         for i in range(p2+1,nx):
-            u_vec[entry] = u[i,j]
+            u_vec[entry] = u2[i,j]
             entry += 1
     return u_vec
 def reorder_u_for_plot(u,p):
