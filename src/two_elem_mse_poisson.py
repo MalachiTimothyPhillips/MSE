@@ -64,7 +64,7 @@ def poisson(p1,p2):
     rhs2 = rhs2.reshape((npt_elem2*npt_elem2,))
     fL = np.hstack([rhs1,rhs2])
     f = R@Q.T@BL@fL
-    u = sppla.cg(A,f)[0]
+    u = sppla.cg(A,f,tol=1e-16)[0]
     u = R.T@u
     u1,u2 = reorder_u_for_plot_mse(u,p1,p2)
     analytical1 = ufunc(X1,Y1)

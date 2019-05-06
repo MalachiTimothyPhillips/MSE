@@ -507,9 +507,9 @@ OUTPUT out/poster.vrb
 INPUT out/poster.vrb
 INPUT out/poster.vrb
 INPUT /usr/share/texmf/fonts/tfm/public/lm/ec-lmssbx10.tfm
-INPUT omega1omega2.png
-INPUT ./omega1omega2.png
-INPUT ./omega1omega2.png
+INPUT omega1omega2.pdf
+INPUT ./omega1omega2.pdf
+INPUT ./omega1omega2.pdf
 INPUT /usr/share/texmf/fonts/tfm/public/lm/ec-lmss17.tfm
 INPUT /usr/share/texmf/fonts/tfm/public/lm/rm-lmss17.tfm
 INPUT /usr/share/texmf/fonts/tfm/public/lm/rm-lmss17.tfm

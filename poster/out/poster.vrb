@@ -20,8 +20,8 @@
       \begin{figure}
       \begin{center}
       \includegraphics[
-  width=\textwidth
-]{omega1omega2}
+  viewport=1.31cm 2.32cm 13.28cm 9.21cm,clip=true,page=1,width=\textwidth
+]{omega1omega2.pdf}
 \end{center}
 
 \caption{\label{fig:domaindecomp} Example of a geometrically confroming domain decomposition, $p_1 = 5$ and $p_2 = 8$.}
@@ -39,8 +39,8 @@
   \(\int_{\Gamma}(u_i-u_j)\psi d\tau = 0\ \forall \psi \in \mathbb{P}_{N_i-2}(\Gamma)\).
 \end{enumerate}
 
-For the two subdomain case with \(\Omega_1\) being the independent side and \(\Omega_2\)
-being the dependent side and $N_1 \le N_2$, the continuity requirement from (3) results
+For the two subdomain case with \(\Omega_1\) being the independent side, \(\Omega_2\)
+being the dependent side, and $N_1 \le N_2$, the continuity requirement from (3) results
 in a simple interpolation scheme:
 \begin{equation}
 \tilde{u}^2(s) = \tilde{u}^1(s) + \alpha L_{N_2}(s) + \beta L_{N_2-1}(s) \nonumber ,
